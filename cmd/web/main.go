@@ -36,18 +36,10 @@ func main() {
 		informationLog: informationLog,
 	}
 
-	router := http.NewServeMux()
-	router.HandleFunc("/", app.home)
-	router.HandleFunc("/snippet", app.showSnippet)
-	router.HandleFunc("/snippet/create", app.createSnippet)
-
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	router.Handle("/static/", http.StripPrefix("/static", fileServer))
-
 	server := &http.Server{
 		Addr:     config.Address,
 		ErrorLog: errorLog,
-		Handler:  router,
+		Handler:  app.routes(),
 	}
 	informationLog.Printf("Starting server on %s", config.Address)
 

@@ -11,7 +11,7 @@ func (app *Application) serverError(
 	err error,
 ) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	app.errorLog.Println(trace)
+	app.errorLog.Output(2, trace)
 
 	http.Error(
 		writer,
