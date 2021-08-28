@@ -12,7 +12,7 @@ func (app *Application) home(
 	request *http.Request,
 ) {
 	if request.URL.Path != "/" {
-		http.NotFound(writer, request)
+		app.notFound(writer)
 		return
 	}
 
@@ -25,16 +25,14 @@ func (app *Application) home(
 	templateSet, err := template.ParseFiles(files...)
 
 	if err != nil {
-		app.errorLog.Println(err.Error())
-		http.Error(writer, "Internal Server Error", 500)
+		app.serverError(writer, err)
 		return
 	}
 
 	err = templateSet.Execute(writer, nil)
 
 	if err != nil {
-		app.errorLog.Println(err.Error())
-		http.Error(writer, "Internal Server Error", 500)
+		app.serverError(writer, err)
 	}
 }
 
@@ -45,7 +43,7 @@ func (app *Application) showSnippet(
 	id, err := strconv.Atoi(request.URL.Query().Get("id"))
 
 	if err != nil || id < 1 {
-		http.NotFound(writer, request)
+		app.notFound(writer)
 		return
 	}
 
@@ -58,7 +56,7 @@ func (app *Application) createSnippet(
 ) {
 	if request.Method != http.MethodPost {
 		writer.Header().Set("Allow", http.MethodPost)
-		http.Error(writer, "Method Not Allowed", http.StatusMethodNotAllowed)
+		app.clientError(writer, http.StatusMethodNotAllowed)
 
 		return
 	}
