@@ -4,11 +4,17 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Config struct {
 	Address         string
 	StaticDirectory string
+}
+
+type Application struct {
+	errorLog       *log.Logger
+	informationLog *log.Logger
 }
 
 func main() {
@@ -22,16 +28,29 @@ func main() {
 	)
 	flag.Parse()
 
+	informationLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	app := &Application{
+		errorLog:       errorLog,
+		informationLog: informationLog,
+	}
+
 	router := http.NewServeMux()
-	router.HandleFunc("/", home)
-	router.HandleFunc("/snippet", showSnippet)
-	router.HandleFunc("/snippet/create", createSnippet)
+	router.HandleFunc("/", app.home)
+	router.HandleFunc("/snippet", app.showSnippet)
+	router.HandleFunc("/snippet/create", app.createSnippet)
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	router.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	log.Printf("Starting server on %s", config.Address)
-	err := http.ListenAndServe(config.Address, router)
+	server := &http.Server{
+		Addr:     config.Address,
+		ErrorLog: errorLog,
+		Handler:  router,
+	}
+	informationLog.Printf("Starting server on %s", config.Address)
 
-	log.Fatal(err)
+	err := server.ListenAndServe()
+	errorLog.Fatal(err)
 }
