@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"time"
 )
 
 func (app *Application) serverError(
@@ -31,6 +33,19 @@ func (app *Application) notFound(writer http.ResponseWriter) {
 	app.clientError(writer, http.StatusNotFound)
 }
 
+func (app *Application) addDefaultData(
+	templateData *TemplateData,
+	request *http.Request,
+) *TemplateData {
+	if templateData == nil {
+		templateData = &TemplateData{}
+	}
+
+	templateData.CurrentYear = time.Now().Year()
+
+	return templateData
+}
+
 func (app *Application) render(
 	writer http.ResponseWriter,
 	request *http.Request,
@@ -44,9 +59,14 @@ func (app *Application) render(
 		return
 	}
 
-	err := templateSet.Execute(writer, templateData)
+	buffer := new(bytes.Buffer)
+
+	err := templateSet.Execute(buffer, app.addDefaultData(templateData, request))
 
 	if err != nil {
 		app.serverError(writer, err)
+		return
 	}
+
+	buffer.WriteTo(writer)
 }
