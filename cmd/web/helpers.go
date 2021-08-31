@@ -30,3 +30,23 @@ func (app *Application) clientError(
 func (app *Application) notFound(writer http.ResponseWriter) {
 	app.clientError(writer, http.StatusNotFound)
 }
+
+func (app *Application) render(
+	writer http.ResponseWriter,
+	request *http.Request,
+	name string,
+	templateData *TemplateData,
+) {
+	templateSet, ok := app.templateCache[name]
+
+	if !ok {
+		app.serverError(writer, fmt.Errorf("The template %s does not exist", name))
+		return
+	}
+
+	err := templateSet.Execute(writer, templateData)
+
+	if err != nil {
+		app.serverError(writer, err)
+	}
+}

@@ -3,9 +3,12 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
+
+	"zapmal/snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
@@ -20,6 +23,8 @@ type Config struct {
 type Application struct {
 	errorLog       *log.Logger
 	informationLog *log.Logger
+	snippets       *mysql.SnippetModel
+	templateCache  map[string]*template.Template
 }
 
 func main() {
@@ -42,17 +47,25 @@ func main() {
 	informationLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	connection, err := openDatabaseConnection(config.DSN)
+	database, err := openDatabaseConnection(config.DSN)
 
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 
-	defer connection.Close()
+	defer database.Close()
+
+	templateCache, err := newTemplateCache("./ui/html/")
+
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	app := &Application{
 		errorLog:       errorLog,
 		informationLog: informationLog,
+		snippets:       &mysql.SnippetModel{Database: database},
+		templateCache:  templateCache,
 	}
 
 	server := &http.Server{
