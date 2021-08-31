@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -24,6 +25,23 @@ func (app *Application) logRequest(next http.Handler) http.Handler {
 				request.Method,
 				request.URL.RequestURI(),
 			)
+
+			next.ServeHTTP(writer, request)
+		},
+	)
+}
+
+func (app *Application) recoverFromPanic(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func(writer http.ResponseWriter, request *http.Request) {
+			// This deferred function will always run in the event of a panic
+			// because Go unwinds the Stack.
+			defer func() {
+				if err := recover(); err != nil {
+					writer.Header().Set("Connection", "close")
+					app.serverError(writer, fmt.Errorf("%s", err))
+				}
+			}()
 
 			next.ServeHTTP(writer, request)
 		},
