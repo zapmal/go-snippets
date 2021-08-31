@@ -14,11 +14,6 @@ func (app *Application) home(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	if request.URL.Path != "/" {
-		app.notFound(writer)
-		return
-	}
-
 	snippets, err := app.snippets.Latest()
 
 	if err != nil {
@@ -35,7 +30,7 @@ func (app *Application) showSnippet(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	id, err := strconv.Atoi(request.URL.Query().Get("id"))
+	id, err := strconv.Atoi(request.URL.Query().Get(":id"))
 
 	if err != nil || id < 1 {
 		app.notFound(writer)
@@ -59,17 +54,17 @@ func (app *Application) showSnippet(
 	})
 }
 
+func (app *Application) createSnippetForm(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	writer.Write([]byte("creates a new (form) snippet"))
+}
+
 func (app *Application) createSnippet(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	if request.Method != http.MethodPost {
-		writer.Header().Set("Allow", http.MethodPost)
-		app.clientError(writer, http.StatusMethodNotAllowed)
-
-		return
-	}
-
 	title := "0 Snail"
 	content := "Who know what did the snail do? Probably nothing but whatever"
 	expires := "7"
