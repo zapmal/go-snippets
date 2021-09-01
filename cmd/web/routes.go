@@ -12,10 +12,12 @@ func (app *Application) routes() http.Handler {
 
 	router := pat.New()
 
-	router.Get("/", http.HandlerFunc(app.home))
-	router.Get("/snippet/create", http.HandlerFunc(app.createSnippetForm))
-	router.Post("/snippet/create", http.HandlerFunc(app.createSnippet))
-	router.Get("/snippet/:id", http.HandlerFunc(app.showSnippet))
+	dynamicMiddleware := alice.New(app.session.Enable)
+
+	router.Get("/", dynamicMiddleware.ThenFunc(app.home))
+	router.Get("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippetForm))
+	router.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
+	router.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	router.Get("/static/", http.StripPrefix("/static", fileServer))

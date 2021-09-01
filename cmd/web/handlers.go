@@ -46,7 +46,6 @@ func (app *Application) showSnippet(
 		} else {
 			app.serverError(writer, err)
 		}
-
 		return
 	}
 
@@ -97,6 +96,8 @@ func (app *Application) createSnippet(
 		app.serverError(writer, err)
 		return
 	}
+
+	app.session.Put(request, "flashMessage", "Snippet created successfully")
 
 	http.Redirect(writer, request, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }

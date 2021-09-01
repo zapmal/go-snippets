@@ -7,10 +7,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"zapmal/snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/golangcollege/sessions"
 	"github.com/joho/godotenv"
 )
 
@@ -18,11 +20,13 @@ type Config struct {
 	Address         string
 	StaticDirectory string
 	DSN             string
+	Secret          string
 }
 
 type Application struct {
 	errorLog       *log.Logger
 	informationLog *log.Logger
+	session        *sessions.Session
 	snippets       *mysql.SnippetModel
 	templateCache  map[string]*template.Template
 }
@@ -41,6 +45,12 @@ func main() {
 		"dsn",
 		getEnvVariable("DATABASE_DSN"),
 		"MySQL data source name",
+	)
+	flag.StringVar(
+		&config.Secret,
+		"secret",
+		getEnvVariable("SECRET_KEY"),
+		"Secret Key",
 	)
 	flag.Parse()
 
@@ -61,9 +71,13 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	session := sessions.New([]byte(config.Secret))
+	session.Lifetime = 12 * time.Hour
+
 	app := &Application{
 		errorLog:       errorLog,
 		informationLog: informationLog,
+		session:        session,
 		snippets:       &mysql.SnippetModel{Database: database},
 		templateCache:  templateCache,
 	}

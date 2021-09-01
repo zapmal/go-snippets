@@ -42,6 +42,7 @@ func (app *Application) addDefaultData(
 	}
 
 	templateData.CurrentYear = time.Now().Year()
+	templateData.Flash = app.session.PopString(request, "flashMessage")
 
 	return templateData
 }
