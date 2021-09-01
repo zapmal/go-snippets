@@ -5,11 +5,13 @@ import (
 	"path/filepath"
 	"time"
 
+	"zapmal/snippetbox/pkg/forms"
 	"zapmal/snippetbox/pkg/models"
 )
 
 type TemplateData struct {
 	CurrentYear int
+	Form        *forms.Form
 	Snippet     *models.Snippet
 	Snippets    []*models.Snippet
 }

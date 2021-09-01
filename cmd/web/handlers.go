@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"zapmal/snippetbox/pkg/forms"
 	"zapmal/snippetbox/pkg/models"
 )
 
@@ -58,22 +59,44 @@ func (app *Application) createSnippetForm(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	writer.Write([]byte("creates a new (form) snippet"))
+	app.render(writer, request, "create.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
 }
 
 func (app *Application) createSnippet(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	title := "0 Snail"
-	content := "Who know what did the snail do? Probably nothing but whatever"
-	expires := "7"
+	err := request.ParseForm()
 
-	id, err := app.snippets.Insert(title, content, expires)
+	if err != nil {
+		app.clientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(request.PostForm)
+	form.Required("title", "content", "expires")
+	form.MaxLength("title", 100)
+	form.AllowedValues("expires", "365", "7", "1")
+
+	if !form.Valid() {
+		app.render(writer, request, "create.page.tmpl", &TemplateData{
+			Form: form,
+		})
+		return
+	}
+
+	id, err := app.snippets.Insert(
+		form.Get("title"),
+		form.Get("content"),
+		form.Get("expires"),
+	)
 
 	if err != nil {
 		app.serverError(writer, err)
+		return
 	}
 
-	http.Redirect(writer, request, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
+	http.Redirect(writer, request, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
