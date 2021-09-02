@@ -101,3 +101,38 @@ func (app *Application) createSnippet(
 
 	http.Redirect(writer, request, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
+
+func (app *Application) signupUserForm(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	fmt.Fprintln(writer, "Display the user signup form")
+}
+
+func (app *Application) signupUser(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	fmt.Fprintln(writer, "signup user")
+}
+
+func (app *Application) loginUserForm(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	fmt.Fprintln(writer, "Display the user login form")
+}
+
+func (app *Application) loginUser(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	fmt.Fprintln(writer, "login user")
+}
+
+func (app *Application) logoutUser(
+	writer http.ResponseWriter,
+	request *http.Request,
+) {
+	fmt.Fprintln(writer, "logout user")
+}

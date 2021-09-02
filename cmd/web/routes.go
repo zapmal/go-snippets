@@ -19,6 +19,12 @@ func (app *Application) routes() http.Handler {
 	router.Post("/snippet/create", dynamicMiddleware.ThenFunc(app.createSnippet))
 	router.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
 
+	router.Get("/user/signup", dynamicMiddleware.ThenFunc(app.signupUserForm))
+	router.Post("/user/signup", dynamicMiddleware.ThenFunc(app.signupUser))
+	router.Get("/user/login", dynamicMiddleware.ThenFunc(app.loginUserForm))
+	router.Post("/user/login", dynamicMiddleware.ThenFunc(app.loginUser))
+	router.Post("/user/logout", dynamicMiddleware.ThenFunc(app.logoutUser))
+
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	router.Get("/static/", http.StripPrefix("/static", fileServer))
 

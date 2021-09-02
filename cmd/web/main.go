@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -28,6 +29,7 @@ type Application struct {
 	informationLog *log.Logger
 	session        *sessions.Session
 	snippets       *mysql.SnippetModel
+	users          *mysql.UserModel
 	templateCache  map[string]*template.Template
 }
 
@@ -73,23 +75,36 @@ func main() {
 
 	session := sessions.New([]byte(config.Secret))
 	session.Lifetime = 12 * time.Hour
+	session.Secure = true
 
 	app := &Application{
 		errorLog:       errorLog,
 		informationLog: informationLog,
 		session:        session,
 		snippets:       &mysql.SnippetModel{Database: database},
+		users:          &mysql.UserModel{Database: database},
 		templateCache:  templateCache,
 	}
 
+	tlsConfig := &tls.Config{
+		PreferServerCipherSuites: true,
+		CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+
 	server := &http.Server{
-		Addr:     config.Address,
-		ErrorLog: errorLog,
-		Handler:  app.routes(),
+		Addr:         config.Address,
+		ErrorLog:     errorLog,
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 	informationLog.Printf("Starting server on %s", config.Address)
 
-	err = server.ListenAndServe()
+	// Needs to be generated with
+	// go run go/path/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
+	err = server.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	errorLog.Fatal(err)
 }
 
