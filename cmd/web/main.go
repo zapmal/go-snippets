@@ -33,6 +33,10 @@ type Application struct {
 	templateCache  map[string]*template.Template
 }
 
+type contextKey string
+
+const contextKeyIsAuthenticated = contextKey("isAuthenticated")
+
 func main() {
 	config := new(Config)
 	flag.StringVar(&config.Address, "addr", ":4000", "HTTP Network Address")

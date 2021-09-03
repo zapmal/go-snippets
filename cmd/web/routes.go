@@ -12,7 +12,7 @@ func (app *Application) routes() http.Handler {
 
 	router := pat.New()
 
-	dynamicMiddleware := alice.New(app.session.Enable, noSurf)
+	dynamicMiddleware := alice.New(app.session.Enable, noSurf, app.authenticate)
 
 	router.Get("/", dynamicMiddleware.ThenFunc(app.home))
 	router.Get("/snippet/create",

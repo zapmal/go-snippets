@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
+
+	"zapmal/snippetbox/pkg/models"
 
 	"github.com/justinas/nosurf"
 )
@@ -74,4 +78,31 @@ func noSurf(next http.Handler) http.Handler {
 	})
 
 	return csrfHandler
+}
+
+func (app *Application) authenticate(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+		func(writer http.ResponseWriter, request *http.Request) {
+			authenticationKeyExists := app.session.Exists(request, "authenticatedUserID")
+
+			if !authenticationKeyExists {
+				next.ServeHTTP(writer, request)
+				return
+			}
+
+			user, err := app.users.Get(app.session.GetInt(request, "authenticatedUserID"))
+
+			if errors.Is(err, models.ErrorRecordNotFound) || !user.Active {
+				app.session.Remove(request, "authenticatedUserID")
+				next.ServeHTTP(writer, request)
+				return
+			} else if err != nil {
+				app.serverError(writer, err)
+				return
+			}
+
+			ctx := context.WithValue(request.Context(), contextKeyIsAuthenticated, true)
+			next.ServeHTTP(writer, request.WithContext(ctx))
+		},
+	)
 }

@@ -77,5 +77,11 @@ func (app *Application) render(
 }
 
 func (app *Application) isAuthenticated(request *http.Request) bool {
-	return app.session.Exists(request, "authenticatedUserID")
+	isAuthenticated, ok := request.Context().Value(contextKeyIsAuthenticated).(bool)
+
+	if !ok {
+		return false
+	}
+
+	return isAuthenticated
 }
