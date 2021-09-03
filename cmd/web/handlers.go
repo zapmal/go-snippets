@@ -106,33 +106,97 @@ func (app *Application) signupUserForm(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	fmt.Fprintln(writer, "Display the user signup form")
+	app.render(writer, request, "signup.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
 }
 
 func (app *Application) signupUser(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	fmt.Fprintln(writer, "signup user")
+	err := request.ParseForm()
+
+	if err != nil {
+		app.clientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(request.PostForm)
+	form.Required("name", "email", "password")
+	form.MaxLength("name", 255)
+	form.MaxLength("email", 255)
+	form.ValidateEmail()
+	form.MinLength("password", 10)
+
+	if !form.Valid() {
+		app.render(writer, request, "signup.page.tmpl", &TemplateData{
+			Form: form,
+		})
+		return
+	}
+
+	err = app.users.Insert(form.Get("name"), form.Get("email"), form.Get("password"))
+
+	if err != nil {
+		if errors.Is(err, models.ErrorDuplicateEmail) {
+			form.Errors.Add("email", "Email address is already in use")
+			app.render(writer, request, "signup.page.tmpl", &TemplateData{Form: form})
+		} else {
+			app.serverError(writer, err)
+		}
+
+		return
+	}
+
+	app.session.Put(request, "flashMessage", "Your signup was successful. You can login now.")
+	http.Redirect(writer, request, "/user/login", http.StatusSeeOther)
 }
 
 func (app *Application) loginUserForm(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	fmt.Fprintln(writer, "Display the user login form")
+	app.render(writer, request, "login.page.tmpl", &TemplateData{
+		Form: forms.New(nil),
+	})
 }
 
 func (app *Application) loginUser(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	fmt.Fprintln(writer, "login user")
+	err := request.ParseForm()
+
+	if err != nil {
+		app.clientError(writer, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(request.PostForm)
+	id, err := app.users.Authenticate(form.Get("email"), form.Get("password"))
+
+	if err != nil {
+		if errors.Is(err, models.ErrorInvalidCredentials) {
+			form.Errors.Add("generic", "Email and/or password is incorrect")
+			app.render(writer, request, "login.page.tmpl", &TemplateData{Form: form})
+		} else {
+			app.serverError(writer, err)
+		}
+
+		return
+	}
+
+	app.session.Put(request, "authenticatedUserID", id)
+	http.Redirect(writer, request, "/snippet/create", http.StatusSeeOther)
 }
 
 func (app *Application) logoutUser(
 	writer http.ResponseWriter,
 	request *http.Request,
 ) {
-	fmt.Fprintln(writer, "logout user")
+	app.session.Remove(request, "authenticatedUserID")
+
+	app.session.Put(request, "flashMessage", "You've been logged out successfully!")
+	http.Redirect(writer, request, "/", http.StatusSeeOther)
 }
