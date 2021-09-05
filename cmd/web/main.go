@@ -10,11 +10,12 @@ import (
 	"os"
 	"time"
 
+	"zapmal/snippetbox/pkg/models"
 	"zapmal/snippetbox/pkg/models/mysql"
+	"zapmal/snippetbox/pkg/utils"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/golangcollege/sessions"
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -28,9 +29,17 @@ type Application struct {
 	errorLog       *log.Logger
 	informationLog *log.Logger
 	session        *sessions.Session
-	snippets       *mysql.SnippetModel
-	users          *mysql.UserModel
-	templateCache  map[string]*template.Template
+	users          interface {
+		Insert(string, string, string) error
+		Authenticate(string, string) (int, error)
+		Get(int) (*models.User, error)
+	}
+	templateCache map[string]*template.Template
+	snippets      interface {
+		Insert(string, string, string) (int, error)
+		Get(int) (*models.Snippet, error)
+		Latest() ([]*models.Snippet, error)
+	}
 }
 
 type contextKey string
@@ -49,13 +58,13 @@ func main() {
 	flag.StringVar(
 		&config.DSN,
 		"dsn",
-		getEnvVariable("DATABASE_DSN"),
+		utils.GetEnvVariable("DATABASE_DSN"),
 		"MySQL data source name",
 	)
 	flag.StringVar(
 		&config.Secret,
 		"secret",
-		getEnvVariable("SECRET_KEY"),
+		utils.GetEnvVariable("SECRET_KEY"),
 		"Secret Key",
 	)
 	flag.Parse()
@@ -125,14 +134,4 @@ func openDatabaseConnection(DSN string) (*sql.DB, error) {
 	}
 
 	return connection, nil
-}
-
-func getEnvVariable(key string) string {
-	err := godotenv.Load()
-
-	if err != nil {
-		log.Fatal("Couldn't load .env file.")
-	}
-
-	return os.Getenv(key)
 }

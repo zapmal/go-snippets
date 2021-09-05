@@ -140,9 +140,11 @@ func (app *Application) signupUser(
 
 	if err != nil {
 		if errors.Is(err, models.ErrorDuplicateEmail) {
-			form.Errors.Add("email", "Email address is already in use")
+			form.Errors.Add("email", "Address is already in use")
 			app.render(writer, request, "signup.page.tmpl", &TemplateData{Form: form})
 		} else {
+			fmt.Println("la perra de tu madre")
+			fmt.Println(err)
 			app.serverError(writer, err)
 		}
 
@@ -199,4 +201,8 @@ func (app *Application) logoutUser(
 
 	app.session.Put(request, "flashMessage", "You've been logged out successfully!")
 	http.Redirect(writer, request, "/", http.StatusSeeOther)
+}
+
+func ping(writer http.ResponseWriter, request *http.Request) {
+	writer.Write([]byte("OK"))
 }

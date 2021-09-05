@@ -99,6 +99,6 @@ func (form *Form) ValidateEmail() {
 	_, err := mail.ParseAddress(value)
 
 	if err != nil {
-		form.Errors.Add("email", "Invalid email")
+		form.Errors.Add("email", "This field is invalid")
 	}
 }

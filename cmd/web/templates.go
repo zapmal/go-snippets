@@ -3,10 +3,10 @@ package main
 import (
 	"html/template"
 	"path/filepath"
-	"time"
 
 	"zapmal/snippetbox/pkg/forms"
 	"zapmal/snippetbox/pkg/models"
+	"zapmal/snippetbox/pkg/utils"
 )
 
 type TemplateData struct {
@@ -19,12 +19,8 @@ type TemplateData struct {
 	Snippets        []*models.Snippet
 }
 
-func humanDate(time time.Time) string {
-	return time.Format("02 Jan 2006 at 15:04")
-}
-
 var functions = template.FuncMap{
-	"humanDate": humanDate,
+	"humanDate": utils.HumanDate,
 }
 
 func newTemplateCache(directory string) (map[string]*template.Template, error) {
